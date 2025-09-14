@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinAI - Your AI Finance Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" xintegrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Tailwind's gray-50 */
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Custom animation for AI thinking dots */
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
+        .bouncing-loader > div {
+            width: 0.75rem;
+            height: 0.75rem;
+            background-color: #9ca3af;
+            border-radius: 100%;
+            display: inline-block;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .bouncing-loader .bounce1 { animation-delay: -0.32s; }
+        .bouncing-loader .bounce2 { animation-delay: -0.16s; }
+
+        /* Animation for modal */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        .animate-scale-in { animation: scaleIn 0.3s ease-out forwards; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // --- MOCK DATA IN RUPEES ---
+        const mockTransactions = [
+            { id: 1, description: "Starbucks Coffee", category: "Food", amount: 460.00, date: "2025-09-14" },
+            { id: 2, description: "Netflix Subscription", category: "Entertainment", amount: 649.00, date: "2025-09-13" },
+            { id: 3, description: "Petrol", category: "Transport", amount: 2500.00, date: "2025-09-12" },
+            { id: 4, description: "Groceries from Blinkit", category: "Groceries", amount: 3250.50, date: "2025-09-10" },
+            { id: 5, description: "Movie Tickets", category: "Entertainment", amount: 980.00, date: "2025-09-08" },
+            { id: 6, description: "Dinner with friends", category: "Food", amount: 1800.00, date: "2025-09-07" },
+        ];
+        
+        const mockBudgets = [
+            { id: 1, category: "Groceries", allocated: 10000, spent: 7540.50 },
+            { id: 2, category: "Entertainment", allocated: 5000, spent: 1629.00 },
+            { id: 3, category: "Food", allocated: 8000, spent: 6360.00 },
+            { id: 4, category: "Transport", allocated: 5000, spent: 3800.00 },
+        ];
+
+
+        // Main App Component
+        const App = () => {
+            const [user, setUser] = useState(null);
+            const [currentPage, setCurrentPage] = useState('dashboard');
+            const [loading, setLoading] = useState(true);
+            const [mobileNavOpen, setMobileNavOpen] = useState(false);
+            const [isArModalOpen, setIsArModalOpen] = useState(false);
+            
+            const [transactions, setTransactions] = useState(mockTransactions);
+            const [budgets, setBudgets] = useState(mockBudgets);
+
+            useEffect(() => {
+                setTimeout(() => {
+                    setUser({ name: 'Alex', avatar: 'https://placehold.co/100x100/FBBF24/FFFFFF?text=A' });
+                    setLoading(false);
+                }, 1500);
+            }, []);
+            
+            const addTransaction = (newTransaction) => {
+                const parsedAmount = parseFloat(newTransaction.amount);
+                if (isNaN(parsedAmount)) return;
+
+                setTransactions(prev => [{ ...newTransaction, amount: parsedAmount, id: Date.now(), date: new Date().toISOString().split('T')[0] }, ...prev]);
+                
+                setBudgets(prevBudgets => prevBudgets.map(budget => {
+                    if (budget.category === newTransaction.category) {
+                        return { ...budget, spent: budget.spent + parsedAmount };
+                    }
+                    return budget;
+                }));
+            };
+
+            const renderPage = () => {
+                switch (currentPage) {
+                    case 'dashboard':
+                        return <Dashboard transactions={transactions} budgets={budgets} />;
+                    case 'budget':
+                        return <Budget budgets={budgets} />;
+                    case 'expenses':
+                        return <Expenses transactions={transactions} addTransaction={addTransaction} />;
+                    case 'split':
+                        return <SplitBill />;
+                    case 'invest':
+                        return <AiAssistant />;
+                    default:
+                        return <Dashboard transactions={transactions} budgets={budgets} />;
+                }
+            };
+
+            if (loading) return <LoadingSpinner />;
+            if (!user) return <LoginScreen onLogin={() => {
+                setUser({ name: 'Alex', avatar: 'https://placehold.co/100x100/FBBF24/FFFFFF?text=A' });
+                setLoading(false);
+            }}/>;
+            
+            return (
+                <div className="flex h-screen bg-gray-50 text-gray-800">
+                    <Navbar 
+                        currentPage={currentPage} 
+                        setCurrentPage={setCurrentPage} 
+                        user={user} 
+                        onLogout={() => setUser(null)}
+                        isOpen={mobileNavOpen}
+                        setIsOpen={setMobileNavOpen}
+                    />
+                    <main className="flex-1 flex flex-col overflow-hidden">
+                        <div className="md:hidden flex justify-between items-center p-4 bg-white border-b">
+                            <h1 className="text-xl font-bold text-orange-500">FinAI</h1>
+                            <button onClick={() => setMobileNavOpen(true)} className="text-gray-600">
+                                <i className="fas fa-bars text-xl"></i>
+                            </button>
+                        </div>
+                        <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto no-scrollbar">
+                           {renderPage()}
+                        </div>
+                    </main>
+
+                    <button 
+                        onClick={() => setIsArModalOpen(true)}
+                        className="fixed bottom-6 right-6 w-16 h-16 bg-orange-500 text-white rounded-full shadow-lg flex items-center justify-center transform hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 z-20"
+                        aria-label="Open AR Expense Scanner"
+                    >
+                        <i className="fas fa-camera text-2xl"></i>
+                    </button>
+
+                    <ArModal isOpen={isArModalOpen} onClose={() => setIsArModalOpen(false)} />
+                </div>
+            );
+        };
+
+        const ArModal = ({ isOpen, onClose }) => {
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 animate-fade-in" onClick={onClose}>
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 relative animate-scale-in" onClick={e => e.stopPropagation()}>
+                        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700">
+                            <i className="fas fa-times text-2xl"></i>
+                        </button>
+                        <div className="text-center">
+                            <h2 className="text-2xl font-bold mb-2">AR Expense Scanner</h2>
+                            <p className="text-gray-500 mb-4">Point your camera at a receipt to log an expense.</p>
+                        </div>
+                        <div className="aspect-video bg-gray-900 rounded-lg flex items-center justify-center text-white">
+                            <div className="text-center">
+                                <i className="fas fa-camera-retro text-6xl opacity-50"></i>
+                                <p className="mt-2 font-semibold">AR Camera View (Simulation)</p>
+                            </div>
+                        </div>
+                         <button 
+                            onClick={onClose}
+                            className="mt-6 w-full py-3 px-4 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+        
+        const LoginScreen = ({ onLogin }) => {
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center p-4">
+                    <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 space-y-6 animate-fade-in">
+                        <div className="text-center">
+                            <h1 className="text-3xl font-bold text-gray-800">Welcome to FinAI</h1>
+                            <p className="text-gray-500 mt-2">Your personal AI-powered finance manager.</p>
+                        </div>
+                        <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); onLogin(); }}>
+                            <div>
+                                <label htmlFor="email" className="text-sm font-medium text-gray-700">Email Address</label>
+                                <input id="email" type="email" required className="mt-1 block w-full px-4 py-3 bg-gray-100 border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500" placeholder="you@example.com" defaultValue="demo@finai.app"/>
+                            </div>
+                            <div>
+                                <label htmlFor="password"className="text-sm font-medium text-gray-700">Password</label>
+                                <input id="password" type="password" required className="mt-1 block w-full px-4 py-3 bg-gray-100 border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500" placeholder="••••••••" defaultValue="password"/>
+                            </div>
+                            <button type="submit" className="w-full py-3 px-4 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-transform transform hover:scale-105">
+                                Sign In
+                            </button>
+                        </form>
+                         <div className="text-center text-sm text-gray-500">
+                            <p>Don't have an account? <a href="#" className="font-medium text-orange-600 hover:text-orange-500">Sign up</a></p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const Navbar = ({ currentPage, setCurrentPage, user, onLogout, isOpen, setIsOpen }) => {
+            const navItems = [
+                { id: 'dashboard', icon: 'fa-solid fa-chart-pie', label: 'Dashboard' },
+                { id: 'expenses', icon: 'fa-solid fa-wallet', label: 'Expenses' },
+                { id: 'budget', icon: 'fa-solid fa-bullseye', label: 'Budgets' },
+                { id: 'split', icon: 'fa-solid fa-users', label: 'Split Bill' },
+                { id: 'invest', icon: 'fa-solid fa-brain', label: 'AI Assistant' },
+            ];
+
+            const NavLink = ({ item }) => (
+                <li key={item.id}>
+                    <a href="#"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(item.id);
+                            setIsOpen(false);
+                        }}
+                        className={`flex items-center p-3 my-1 rounded-lg transition-colors ${currentPage === item.id ? 'bg-orange-100 text-orange-600' : 'text-gray-600 hover:bg-gray-100'}`}
+                    >
+                        <i className={`${item.icon} w-6 text-center`}></i>
+                        <span className="ml-4 font-medium">{item.label}</span>
+                    </a>
+                </li>
+            );
+            
+            const navContent = (
+                <div className="flex flex-col h-full p-4">
+                    <div className="flex items-center justify-between mb-8">
+                        <h1 className="text-2xl font-bold text-orange-500">FinAI</h1>
+                         <button onClick={() => setIsOpen(false)} className="md:hidden text-gray-500 hover:text-gray-800">
+                            <i className="fas fa-times text-2xl"></i>
+                         </button>
+                    </div>
+                    <ul className="flex-1">
+                        {navItems.map(item => <NavLink item={item} />)}
+                    </ul>
+                    <div>
+                        <div className="border-t -mx-4 my-4"></div>
+                        <div className="flex items-center">
+                            <img src={user.avatar} alt="User Avatar" className="w-10 h-10 rounded-full" />
+                            <div className="ml-3">
+                                <p className="font-semibold">{user.name}</p>
+                                <button onClick={onLogout} className="text-sm text-gray-500 hover:text-orange-500">Log out</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            return (
+                <>
+                    <div className={`fixed inset-0 z-30 bg-black bg-opacity-50 transition-opacity md:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsOpen(false)}></div>
+                    <div className={`fixed inset-y-0 left-0 w-64 bg-white z-40 transform transition-transform md:hidden ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                        {navContent}
+                    </div>
+                    <nav className="hidden md:block w-64 bg-white border-r flex-shrink-0">
+                        {navContent}
+                    </nav>
+                </>
+            );
+        };
+        
+        const Card = ({ children, className }) => (
+            <div className={`bg-white p-6 rounded-2xl shadow-sm ${className}`}>
+                {children}
+            </div>
+        );
+
+        const LoadingSpinner = () => (
+             <div className="min-h-screen bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                <div className="text-center text-white">
+                    <i className="fas fa-spinner fa-spin text-5xl"></i>
+                    <p className="mt-4 text-lg font-semibold">Loading FinAI...</p>
+                </div>
+            </div>
+        );
+        
+        const Dashboard = ({ transactions, budgets }) => {
+            const totalSpent = useMemo(() => transactions.reduce((sum, t) => sum + t.amount, 0), [transactions]);
+            const totalIncome = 100000;
+
+            const formatCurrency = (amount) => {
+                return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(amount);
+            };
+            
+            const balance = totalIncome - totalSpent;
+
+            return (
+                <div className="space-y-8">
+                    <div>
+                        <h1 className="text-3xl font-bold">Welcome back, Alex!</h1>
+                        <p className="text-gray-500 mt-1">Here's your financial overview for this month.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <Card>
+                             <div className="flex items-center text-green-500">
+                                <i className="fas fa-wallet text-2xl"></i>
+                                <p className="ml-3 font-medium">Total Balance</p>
+                            </div>
+                            <p className="text-3xl font-bold mt-2">{formatCurrency(balance)}</p>
+                        </Card>
+                         <Card>
+                             <div className="flex items-center text-blue-500">
+                                <i className="fas fa-arrow-down text-2xl"></i>
+                                <p className="ml-3 font-medium">Monthly Income</p>
+                            </div>
+                            <p className="text-3xl font-bold mt-2">{formatCurrency(totalIncome)}</p>
+                        </Card>
+                         <Card>
+                             <div className="flex items-center text-red-500">
+                                <i className="fas fa-arrow-up text-2xl"></i>
+                                <p className="ml-3 font-medium">Monthly Expenses</p>
+                            </div>
+                            <p className="text-3xl font-bold mt-2">{formatCurrency(totalSpent)}</p>
+                        </Card>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                        <Card className="lg:col-span-3">
+                            <h2 className="text-xl font-semibold mb-4">Spending by Category</h2>
+                            <SpendingChart transactions={transactions}/>
+                        </Card>
+                         <Card className="lg:col-span-2">
+                             <h2 className="text-xl font-semibold mb-4">Recent Transactions</h2>
+                             <ul className="space-y-4">
+                                {transactions.slice(0, 5).map(t => <TransactionItem key={t.id} transaction={t} />)}
+                             </ul>
+                        </Card>
+                    </div>
+                </div>
+            );
+        };
+        
+        const Expenses = ({ transactions, addTransaction }) => {
+            const [description, setDescription] = useState('');
+            const [amount, setAmount] = useState('');
+            const [category, setCategory] = useState('Food');
+            const [isDetecting, setIsDetecting] = useState(false);
+            const [aiSuggested, setAiSuggested] = useState(false);
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (!description || !amount || !category) return;
+                addTransaction({ description, amount, category });
+                setDescription('');
+                setAmount('');
+                setCategory('Food');
+                setAiSuggested(false);
+            };
+            
+            const handleDetectCategory = () => {
+                if (!description) return;
+                setIsDetecting(true);
+                setAiSuggested(false);
+
+                setTimeout(() => {
+                    const lowerDesc = description.toLowerCase();
+                    let detectedCategory = 'Other';
+                    if (['coffee', 'restaurant', 'lunch', 'dinner', 'zomato', 'swiggy'].some(k => lowerDesc.includes(k))) detectedCategory = 'Food';
+                    else if (['groceries', 'milk', 'bread', 'blinkit', 'zepto'].some(k => lowerDesc.includes(k))) detectedCategory = 'Groceries';
+                    else if (['petrol', 'gas', 'uber', 'ola', 'metro', 'taxi'].some(k => lowerDesc.includes(k))) detectedCategory = 'Transport';
+                    else if (['movie', 'netflix', 'spotify', 'concert', 'tickets'].some(k => lowerDesc.includes(k))) detectedCategory = 'Entertainment';
+                    else if (['electricity', 'water', 'internet', 'rent'].some(k => lowerDesc.includes(k))) detectedCategory = 'Utilities';
+                    else if (['doctor', 'pharmacy', 'medicine'].some(k => lowerDesc.includes(k))) detectedCategory = 'Health';
+                    
+                    setCategory(detectedCategory);
+                    setIsDetecting(false);
+                    setAiSuggested(true);
+                }, 1000);
+            };
+
+            const categories = ["Food", "Groceries", "Transport", "Entertainment", "Utilities", "Health", "Other"];
+
+            return (
+                 <div className="space-y-8">
+                    <h1 className="text-3xl font-bold">Expenses</h1>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <Card className="lg:col-span-1">
+                            <h2 className="text-xl font-semibold mb-4">Add New Expense</h2>
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div>
+                                    <label className="text-sm font-medium">Description</label>
+                                    <div className="relative">
+                                        <input type="text" value={description} onChange={e => setDescription(e.target.value)} className="mt-1 block w-full px-3 py-2 bg-gray-100 border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 pr-28" placeholder="e.g., Lunch with team"/>
+                                        <button 
+                                            type="button" 
+                                            onClick={handleDetectCategory}
+                                            disabled={isDetecting || !description}
+                                            className="absolute inset-y-0 right-1 my-1 flex items-center bg-orange-200 text-orange-700 font-semibold px-3 rounded-md text-xs hover:bg-orange-300 disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            {isDetecting ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fas fa-wand-magic-sparkles mr-1.5"></i> Detect</>}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium">Amount (₹)</label>
+                                    <input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="mt-1 block w-full px-3 py-2 bg-gray-100 border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500" placeholder="0.00"/>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium flex items-center">
+                                        Category 
+                                        {aiSuggested && <span className="ml-2 text-orange-500" title="AI Suggested"><i className="fas fa-wand-magic-sparkles text-xs"></i></span>}
+                                    </label>
+                                     <select 
+                                        value={category} 
+                                        onChange={e => {
+                                            setCategory(e.target.value);
+                                            setAiSuggested(false);
+                                        }} 
+                                        className="mt-1 block w-full px-3 py-2 bg-gray-100 border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
+                                     >
+                                        {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                                    </select>
+                                </div>
+                                <button type="submit" className="w-full py-3 px-4 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors">
+                                    Add Expense
+                                </button>
+                            </form>
+                        </Card>
+                        <Card className="lg:col-span-2">
+                            <h2 className="text-xl font-semibold mb-4">All Transactions</h2>
+                            <div className="h-96 overflow-y-auto no-scrollbar">
+                                <ul className="space-y-4 pr-2">
+                                    {transactions.map(t => <TransactionItem key={t.id} transaction={t} />)}
+                                </ul>
+                            </div>
+                        </Card>
+                    </div>
+                 </div>
+            );
+        };
+
+        const Budget = ({ budgets }) => {
+            return (
+                 <div className="space-y-8">
+                    <h1 className="text-3xl font-bold">Your Budgets</h1>
+                    <p className="text-gray-500">Keep track of your spending against your monthly goals.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {budgets.map(budget => <BudgetCard key={budget.id} budget={budget}/>)}
+                    </div>
+                 </div>
+            );
+        };
+        
+        const SplitBill = () => {
+            const [total, setTotal] = useState('');
+            const [people, setPeople] = useState(2);
+            const [tip, setTip] = useState(10);
+            const [result, setResult] = useState(null);
+
+            const calculateSplit = () => {
+                const totalAmount = parseFloat(total);
+                const numPeople = parseInt(people);
+                if (isNaN(totalAmount) || totalAmount <= 0 || isNaN(numPeople) || numPeople <= 0) {
+                    setResult(null);
+                    return;
+                }
+                const tipAmount = totalAmount * (tip / 100);
+                const finalTotal = totalAmount + tipAmount;
+                const perPerson = finalTotal / numPeople;
+                setResult({
+                    totalBill: finalTotal.toFixed(2),
+                    perPerson: perPerson.toFixed(2),
+                    tipAmount: tipAmount.toFixed(2)
+                });
+            };
+
+            useEffect(() => {
+                calculateSplit();
+            }, [total, people, tip]);
+
+            return (
+                <div className="space-y-8 max-w-2xl mx-auto">
+                    <h1 className="text-3xl font-bold text-center">Split a Bill</h1>
+                    <p className="text-gray-500 text-center">Easily divide expenses with friends.</p>
+                    <Card className="space-y-6">
+                        <div>
+                            <label className="text-sm font-medium">Bill Total (₹)</label>
+                            <input type="number" value={total} onChange={e => setTotal(e.target.value)} className="mt-1 text-2xl block w-full px-4 py-3 bg-gray-100 border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500" placeholder="0.00"/>
+                        </div>
+                        <div className="grid grid-cols-2 gap-6">
+                             <div>
+                                <label className="text-sm font-medium">Number of People</label>
+                                <input type="number" value={people} onChange={e => setPeople(e.target.value)} className="mt-1 text-2xl block w-full px-4 py-3 bg-gray-100 border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"/>
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium">Tip Percentage</label>
+                                <select value={tip} onChange={e => setTip(e.target.value)} className="mt-1 text-2xl block w-full px-4 py-3 bg-gray-100 border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500">
+                                    <option value="5">5%</option>
+                                    <option value="10">10%</option>
+                                    <option value="15">15%</option>
+                                </select>
+                            </div>
+                        </div>
+                    </Card>
+
+                    {result && (
+                         <Card className="bg-gradient-to-br from-amber-400 to-orange-500 text-white text-center">
+                            <p className="text-lg">Each person pays</p>
+                            <p className="text-5xl font-bold my-2">₹{result.perPerson}</p>
+                            <p className="text-sm opacity-80">Total bill of ₹{result.totalBill} (includes ₹{result.tipAmount} tip)</p>
+                         </Card>
+                    )}
+                </div>
+            );
+        };
+
+        const AiAssistant = () => {
+            const [messages, setMessages] = useState([
+                { sender: 'ai', text: "Hello! I'm Fin, your AI Financial Assistant. Ask me anything about budgeting, saving, or understanding your spending. For example, 'How can I save on groceries?' or 'What's a good way to budget?'" }
+            ]);
+            const [input, setInput] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const chatEndRef = useRef(null);
+            
+            useEffect(() => {
+                chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }, [messages]);
+
+            const getAIResponse = (userMessage) => {
+                 const cannedResponses = {
+                    "how can i save on groceries": "A great way to save on groceries is by planning your meals for the week, making a shopping list and sticking to it, and looking for deals or buying generic brands. Avoid shopping when you're hungry!",
+                    "what's a good way to budget": "A popular and simple method is the 50/30/20 rule. 50% of your income goes to needs (rent, bills), 30% to wants (dining out, entertainment), and 20% to savings and debt repayment. Would you like me to explain it further?",
+                    "explain credit score": "A credit score is a number that represents your creditworthiness to lenders. It's based on your history of paying bills and debts on time. A higher score makes it easier to get loans for things like a car or a house at better interest rates.",
+                    "default": "That's an interesting question. For specific advice tailored to your situation, it's always best to consult with a certified financial planner. However, I can help with general financial knowledge, like explaining budgeting techniques."
+                };
+                const key = userMessage.toLowerCase().trim().replace(/[^\w\s]/gi, '');
+                return cannedResponses[key] || cannedResponses['default'];
+            };
+
+            const handleSend = (e) => {
+                e.preventDefault();
+                if (!input.trim() || isLoading) return;
+
+                const userMessage = { sender: 'user', text: input };
+                setMessages(prev => [...prev, userMessage]);
+                setInput('');
+                setIsLoading(true);
+
+                setTimeout(() => {
+                    const aiResponseText = getAIResponse(input);
+                    const aiMessage = { sender: 'ai', text: aiResponseText };
+                    setMessages(prev => [...prev, aiMessage]);
+                    setIsLoading(false);
+                }, 1500 + Math.random() * 500);
+            };
+
+            return (
+                <div className="flex flex-col h-full max-w-4xl mx-auto">
+                    <div className="text-center mb-6">
+                        <h1 className="text-3xl font-bold">AI Financial Assistant</h1>
+                        <p className="text-gray-500">Chat with FinAI for smart financial advice.</p>
+                    </div>
+                    <Card className="flex-1 flex flex-col">
+                        <div className="flex-1 p-4 space-y-4 overflow-y-auto no-scrollbar">
+                            {messages.map((msg, index) => (
+                                <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
+                                    {msg.sender === 'ai' && <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white flex-shrink-0"><i className="fas fa-brain"></i></div>}
+                                    <div className={`max-w-md p-3 rounded-2xl ${msg.sender === 'ai' ? 'bg-gray-100' : 'bg-orange-500 text-white'}`}>
+                                        <p>{msg.text}</p>
+                                    </div>
+                                </div>
+                            ))}
+                            {isLoading && (
+                                <div className="flex items-start gap-3">
+                                     <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white flex-shrink-0"><i className="fas fa-brain"></i></div>
+                                     <div className="max-w-md p-3 rounded-2xl bg-gray-100">
+                                         <div className="bouncing-loader">
+                                            <div className="bounce1"></div>
+                                            <div className="bounce2"></div>
+                                            <div className="bounce3"></div>
+                                        </div>
+                                     </div>
+                                </div>
+                            )}
+                            <div ref={chatEndRef} />
+                        </div>
+                        <form onSubmit={handleSend} className="p-4 border-t flex gap-4">
+                            <input 
+                                type="text" 
+                                value={input}
+                                onChange={e => setInput(e.target.value)}
+                                className="flex-1 px-4 py-2 bg-gray-100 border-gray-300 rounded-full focus:ring-orange-500 focus:border-orange-500" 
+                                placeholder="Ask a financial question..."
+                                disabled={isLoading}
+                            />
+                            <button type="submit" disabled={isLoading || !input.trim()} className="px-5 py-2 bg-orange-500 text-white font-semibold rounded-full hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                                Send
+                            </button>
+                        </form>
+                    </Card>
+                </div>
+            );
+        };
+        
+        const SpendingChart = ({ transactions }) => {
+            const chartRef = useRef(null);
+            
+            useEffect(() => {
+                if (!chartRef.current) return;
+                
+                const spendingByCategory = transactions.reduce((acc, t) => {
+                    acc[t.category] = (acc[t.category] || 0) + t.amount;
+                    return acc;
+                }, {});
+
+                const labels = Object.keys(spendingByCategory);
+                const data = Object.values(spendingByCategory);
+
+                const chartInstance = new Chart(chartRef.current, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Spending',
+                            data: data,
+                            backgroundColor: [
+                                'rgba(249, 115, 22, 0.8)',
+                                'rgba(251, 146, 60, 0.8)',
+                                'rgba(253, 186, 116, 0.8)',
+                                'rgba(252, 211, 77, 0.8)',
+                                'rgba(251, 191, 36, 0.8)',
+                            ],
+                            borderColor: '#fff',
+                            borderWidth: 4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                            },
+                        },
+                        cutout: '70%',
+                    }
+                });
+
+                return () => chartInstance.destroy();
+
+            }, [transactions]);
+            
+            return <div className="h-64 md:h-80"><canvas ref={chartRef}></canvas></div>;
+        };
+
+        const TransactionItem = ({ transaction }) => {
+            const categoryIcons = {
+                "Food": { icon: "fa-utensils", color: "text-red-500", bg: "bg-red-100" },
+                "Transport": { icon: "fa-car", color: "text-blue-500", bg: "bg-blue-100" },
+                "Entertainment": { icon: "fa-film", color: "text-purple-500", bg: "bg-purple-100" },
+                "Groceries": { icon: "fa-shopping-cart", color: "text-green-500", bg: "bg-green-100" },
+                "Utilities": { icon: "fa-bolt", color: "text-yellow-500", bg: "bg-yellow-100" },
+                "Health": { icon: "fa-heartbeat", color: "text-pink-500", bg: "bg-pink-100" },
+                "Other": { icon: "fa-receipt", color: "text-gray-500", bg: "bg-gray-100" },
+            };
+            const { icon, color, bg } = categoryIcons[transaction.category] || categoryIcons["Other"];
+
+            const formatCurrency = (amount) => {
+                return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(amount);
+            };
+
+            return (
+                 <li className="flex items-center justify-between">
+                    <div className="flex items-center">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${bg} ${color}`}>
+                            <i className={`fas ${icon}`}></i>
+                        </div>
+                        <div className="ml-3">
+                            <p className="font-medium">{transaction.description}</p>
+                            <p className="text-sm text-gray-500">{transaction.date}</p>
+                        </div>
+                    </div>
+                    <p className="font-semibold">-{formatCurrency(transaction.amount)}</p>
+                </li>
+            );
+        };
+        
+        const BudgetCard = ({ budget }) => {
+            const percentage = (budget.spent / budget.allocated) * 100;
+            const remaining = budget.allocated - budget.spent;
+            const progressBarColor = percentage > 90 ? 'bg-red-500' : percentage > 70 ? 'bg-yellow-500' : 'bg-green-500';
+
+            const formatCurrency = (amount) => {
+                 return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(amount);
+            }
+
+            return (
+                <Card>
+                    <div className="flex justify-between items-center mb-1">
+                        <p className="font-semibold">{budget.category}</p>
+                        <p className="text-sm text-gray-500">{formatCurrency(budget.spent)} / {formatCurrency(budget.allocated)}</p>
+                    </div>
+                     <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div className={`${progressBarColor} h-2.5 rounded-full`} style={{ width: `${Math.min(percentage, 100)}%` }}></div>
+                    </div>
+                    <p className="text-sm mt-2 text-gray-600">
+                        {remaining >= 0 ? `${formatCurrency(remaining)} remaining` : `${formatCurrency(Math.abs(remaining))} overspent`}
+                    </p>
+                </Card>
+            );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
