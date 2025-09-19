@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FinAI - Your AI Finance Manager</title>
+    <title>Zentro - Centre Your Wealth Master Your World</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -14,7 +14,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8fafc; /* Tailwind's gray-50 */
+            background-color: #f8fafc;
         }
         .no-scrollbar::-webkit-scrollbar {
             display: none;
@@ -23,7 +23,7 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
-        /* Custom animation for AI thinking dots */
+
         @keyframes bounce {
             0%, 80%, 100% { transform: scale(0); }
             40% { transform: scale(1.0); }
@@ -39,7 +39,7 @@
         .bouncing-loader .bounce1 { animation-delay: -0.32s; }
         .bouncing-loader .bounce2 { animation-delay: -0.16s; }
 
-        /* Animation for modal */
+
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -58,7 +58,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        // --- MOCK DATA IN RUPEES ---
+
         const mockTransactions = [
             { id: 1, description: "Starbucks Coffee", category: "Food", amount: 460.00, date: "2025-09-14" },
             { id: 2, description: "Netflix Subscription", category: "Entertainment", amount: 649.00, date: "2025-09-13" },
@@ -76,7 +76,7 @@
         ];
 
 
-        // Main App Component
+
         const App = () => {
             const [user, setUser] = useState(null);
             const [currentPage, setCurrentPage] = useState('dashboard');
@@ -89,7 +89,7 @@
 
             useEffect(() => {
                 setTimeout(() => {
-                    setUser({ name: 'Alex', avatar: 'https://placehold.co/100x100/FBBF24/FFFFFF?text=A' });
+                    setUser({ name: 'User', avatar: 'https://placehold.co/100x100/FBBF24/FFFFFF?text=A' });
                     setLoading(false);
                 }, 1500);
             }, []);
@@ -127,7 +127,7 @@
 
             if (loading) return <LoadingSpinner />;
             if (!user) return <LoginScreen onLogin={() => {
-                setUser({ name: 'Alex', avatar: 'https://placehold.co/100x100/FBBF24/FFFFFF?text=A' });
+                setUser({ name: 'User', avatar: 'https://placehold.co/100x100/FBBF24/FFFFFF?text=A' });
                 setLoading(false);
             }}/>;
             
@@ -143,7 +143,7 @@
                     />
                     <main className="flex-1 flex flex-col overflow-hidden">
                         <div className="md:hidden flex justify-between items-center p-4 bg-white border-b">
-                            <h1 className="text-xl font-bold text-orange-500">FinAI</h1>
+                            <h1 className="text-xl font-bold text-orange-500">Zentro</h1>
                             <button onClick={() => setMobileNavOpen(true)} className="text-gray-600">
                                 <i className="fas fa-bars text-xl"></i>
                             </button>
@@ -201,13 +201,13 @@
                 <div className="min-h-screen bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center p-4">
                     <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 space-y-6 animate-fade-in">
                         <div className="text-center">
-                            <h1 className="text-3xl font-bold text-gray-800">Welcome to FinAI</h1>
+                            <h1 className="text-3xl font-bold text-gray-800">Welcome to Zentro</h1>
                             <p className="text-gray-500 mt-2">Your personal AI-powered finance manager.</p>
                         </div>
                         <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); onLogin(); }}>
                             <div>
                                 <label htmlFor="email" className="text-sm font-medium text-gray-700">Email Address</label>
-                                <input id="email" type="email" required className="mt-1 block w-full px-4 py-3 bg-gray-100 border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500" placeholder="you@example.com" defaultValue="demo@finai.app"/>
+                                <input id="email" type="email" required className="mt-1 block w-full px-4 py-3 bg-gray-100 border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500" placeholder="you@example.com" defaultValue="demo@zentro.app"/>
                             </div>
                             <div>
                                 <label htmlFor="password"className="text-sm font-medium text-gray-700">Password</label>
@@ -231,7 +231,7 @@
                 { id: 'expenses', icon: 'fa-solid fa-wallet', label: 'Expenses' },
                 { id: 'budget', icon: 'fa-solid fa-bullseye', label: 'Budgets' },
                 { id: 'split', icon: 'fa-solid fa-users', label: 'Split Bill' },
-                { id: 'invest', icon: 'fa-solid fa-brain', label: 'AI Assistant' },
+                { id: 'invest', icon: 'fa-solid fa-brain', label: 'ZenAI' },
             ];
 
             const NavLink = ({ item }) => (
@@ -253,7 +253,7 @@
             const navContent = (
                 <div className="flex flex-col h-full p-4">
                     <div className="flex items-center justify-between mb-8">
-                        <h1 className="text-2xl font-bold text-orange-500">FinAI</h1>
+                        <h1 className="text-2xl font-bold text-orange-500">Zentro</h1>
                          <button onClick={() => setIsOpen(false)} className="md:hidden text-gray-500 hover:text-gray-800">
                             <i className="fas fa-times text-2xl"></i>
                          </button>
@@ -297,7 +297,7 @@
              <div className="min-h-screen bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
                 <div className="text-center text-white">
                     <i className="fas fa-spinner fa-spin text-5xl"></i>
-                    <p className="mt-4 text-lg font-semibold">Loading FinAI...</p>
+                    <p className="mt-4 text-lg font-semibold">Loading Zentro...</p>
                 </div>
             </div>
         );
@@ -315,7 +315,7 @@
             return (
                 <div className="space-y-8">
                     <div>
-                        <h1 className="text-3xl font-bold">Welcome back, Alex!</h1>
+                        <h1 className="text-3xl font-bold">Welcome back, User!</h1>
                         <p className="text-gray-500 mt-1">Here's your financial overview for this month.</p>
                     </div>
 
@@ -535,7 +535,7 @@
 
         const AiAssistant = () => {
             const [messages, setMessages] = useState([
-                { sender: 'ai', text: "Hello! I'm Fin, your AI Financial Assistant. Ask me anything about budgeting, saving, or understanding your spending. For example, 'How can I save on groceries?' or 'What's a good way to budget?'" }
+                { sender: 'ai', text: "Hello! I'm ZenAI, your AI Financial Assistant. Ask me anything about budgeting, saving, or understanding your spending. For example, 'How can I save on groceries?' or 'What's a good way to budget?'" }
             ]);
             const [input, setInput] = useState('');
             const [isLoading, setIsLoading] = useState(false);
